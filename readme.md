@@ -2,7 +2,9 @@
 
 ## Overview
 
-This module's goal is to provide a robust, type-safe, and functional approach to error handling and result management in Python, inspired by Rust’s `Result` type. It defines generic result classes (`CResult`, `Result`) for business logic and API responses, ensuring all code paths are handled and errors are encoded in result objects rather than relying on exceptions alone and no built-in result data validation at runtime.
+This module's goal is to provide a robust, type-safe, and functional approach to error handling and result management in Python, inspired by Functional programming but modeled to fit the constraints of pythonic programming. It defines generic result classes (`CResult`, `Result`) for business logic and API responses, with a goal of complete code path coverage with results encoded in result objects rather than relying on exceptions.
+
+Please note that this code is just an initial design with the goal of building a opinionated code styling for Result generators and consumers. The goal is clean and readable business logic with robust failure, error and exception handling.
 
 ---
 
