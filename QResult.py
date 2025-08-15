@@ -29,32 +29,22 @@ TCode = TypeVar('TCode', bound=Enum)
 TResult = TypeVar('TResult')
 
 class ResultBase(Exception, ABC):
-    pass
-
-class CResult(ResultBase, Generic[TInst, TCode, TResult], ABC):
-    __code__:TCode
     __result__:TResult
     __reason__:Optional[str]
     __ex__:Optional[Exception]
     __call_frame__:Optional[FrameType]
 
-    def __init__(self, code: Optional[TCode] = None, result: Optional[TResult] = None,
-                 reason: Optional[str] = None, ex: Optional[Exception] = None, caller: Optional[FrameType] = None):
-        self.__code__ = code
-        self.__result__ = result
-        self.__reason__ = reason
-        self.__ex__ = ex
-        self.__call_frame__ = caller
-
-
-    def isOk(self) -> bool: return (self.__ex__ is None and self.__reason__ is None)
-    def isNotOk(self) -> bool: return not(self.isOk())
-    def hasEx(self) -> bool: return self.__ex__ is not None
-
-    # Define Read Only Property for Code
     @property
-    def code(self) -> Optional[TCode]:
-        return self.__code__
+    def IsOk(self) -> bool:
+        return (self.__ex__ is None and self.__reason__ is None)
+
+    @property
+    def IsNotOk(self) -> bool:
+        return not(self.IsOk)
+    
+    @property
+    def HasEx(self) -> bool:
+        return self.__ex__ is not None
 
     @property
     def result(self) -> Optional[TResult]:
@@ -71,6 +61,31 @@ class CResult(ResultBase, Generic[TInst, TCode, TResult], ABC):
     @property
     def call_frame(self) -> Optional[FrameType]:
         return self.__call_frame__
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+
+class CResult(ResultBase, Generic[TInst, TCode, TResult], ABC):
+    __code__:TCode
+
+
+    def __init__(self, code: Optional[TCode] = None, result: Optional[TResult] = None,
+                 reason: Optional[str] = None, ex: Optional[Exception] = None, caller: Optional[FrameType] = None):
+        self.__code__ = code
+        self.__result__ = result
+        self.__reason__ = reason
+        self.__ex__ = ex
+        self.__call_frame__ = caller
+
+
+    # Define Read Only Property for Code
+    @property
+    def code(self) -> Optional[TCode]:
+        return self.__code__
 
 
     @classmethod
@@ -105,11 +120,6 @@ class CResult(ResultBase, Generic[TInst, TCode, TResult], ABC):
         return cls(code=code, reason=reason, ex=ex, caller=_caller)
     
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        pass
 
     def ppstr(self, incl_type:bool=False) -> str:
         return self.__str__(incl_type=incl_type)
@@ -119,9 +129,9 @@ class CResult(ResultBase, Generic[TInst, TCode, TResult], ABC):
         if incl_type:
             sb.append(f"<{self.__class__.__name__}> ")
         
-        if self.isOk():
+        if self.IsOk:
             sb.append(f"OK result={self.result}")
-        elif self.hasEx():
+        elif self.HasEx:
             sb.append(f"ERR code: {self.code}, ex: {self.ex}")
         else:
             sb.append(f"FAIL code: {self.code}")
@@ -136,10 +146,6 @@ class CResult(ResultBase, Generic[TInst, TCode, TResult], ABC):
     
 
 class Result(ResultBase, Generic[TInst, TResult], ABC):
-    __result__:TResult
-    __reason__:Optional[str]
-    __ex__:Optional[Exception]
-    __call_frame__:Optional[FrameType]
 
     def __init__(self, result: Optional[TResult] = None,
                  reason: Optional[str] = None, ex: Optional[Exception] = None, caller: Optional[FrameType] = None):
@@ -147,28 +153,6 @@ class Result(ResultBase, Generic[TInst, TResult], ABC):
         self.__reason__ = reason
         self.__ex__ = ex
         self.__call_frame__ = caller
-
-
-    def isOk(self) -> bool: return (self.__ex__ is None and self.__reason__ is None)
-    def isNotOk(self) -> bool: return not(self.isOk())
-    def hasEx(self) -> bool: return self.__ex__ is not None
-
-    @property
-    def result(self) -> Optional[TResult]:
-        return self.__result__
-
-    @property
-    def reason(self) -> Optional[str]:
-        return self.__reason__
-
-    @property
-    def ex(self) -> Optional[Exception]:
-        return self.__ex__
-
-    @property
-    def call_frame(self) -> Optional[FrameType]:
-        return self.__call_frame__
-
 
     @classmethod
     def ok(cls, result: Optional[Any] = None):
@@ -179,8 +163,6 @@ class Result(ResultBase, Generic[TInst, TResult], ABC):
 
     @classmethod
     def fail(cls, reason: Optional[str] = None, ex: Optional[Exception] = None):
-        expected_type = getattr(cls, '__orig_bases__', [None])[0]
-
         _caller = None
 
         if ex is None:
@@ -210,9 +192,9 @@ class Result(ResultBase, Generic[TInst, TResult], ABC):
         if incl_type:
             sb.append(f"<{self.__class__.__name__}> ")
         
-        if self.isOk():
+        if self.IsOk:
             sb.append(f"OK result: `{self.result}`")
-        elif self.hasEx():
+        elif self.HasEx:
             sb.append(f"ERR ex: `{self.ex}`")
         else:
             sb.append(f"FAIL")
@@ -457,8 +439,9 @@ def main():
         # test_CResult()
         # test_Result()
 
-        # example_CResult()
-        example_Result()
+        example_CResult()
+        # example_Result()
+        
     except ResultBase as ex:
         print(f"ResultBase error occurred: {ex}")
     
@@ -483,10 +466,10 @@ def test_CResult():
 def example_CResult():
     # actual real world example:
     sInput = "123 Main St"
-    sResult: Tuple[str, int, List[Decimal]] = None
+    _res: Tuple[str, int, List[Decimal]] = None
     with CResultExample.do_something(sInput) as R:
-        if R.isNotOk():
-            if R.hasEx():
+        if R.IsNotOk:
+            if R.HasEx:
                 if R.code == CResultExample.ECode.TIMEOUT:
                     print(f"Timeout Error: {R.ppstr()}")
                 else:
@@ -504,8 +487,8 @@ def example_CResult():
                 else:
                     print(f"Failed: {R.ppstr()}")
         else:
-            sResult = R.result
-            print(f"Success. result: {sResult}")
+            _res = R.result
+            print(f"Success. result: {_res}")
 
 
 def test_Result():
@@ -530,10 +513,10 @@ def example_Result():
     sInput = "dbg_timeout"
     # sInput = "dbg_unknown"
 
-    sResult: Union[str, int, List[Decimal]] = None
+    _res: Union[str, int, List[Decimal]] = None
     with ResultExample.do_something(sInput) as R:
-        if R.isNotOk():
-            if R.hasEx():
+        if R.IsNotOk:
+            if R.HasEx:
                 # Its an Result object is an error and can be raised as is
                 # You just need to make sure upstream catch blocks are Result aware
                 # Just catch ResultBase type to detect
@@ -541,8 +524,8 @@ def example_Result():
             else:
                 print(f"Failed: {R.ppstr()}")
         else:
-            sResult = R.result
-            print(f"Success. result: {sResult}")
+            _res = R.result
+            print(f"Success. result: {_res}")
 
 
 # Example usage:

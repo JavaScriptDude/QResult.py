@@ -22,7 +22,7 @@ Please note that this code is just an initial design with the goal of building a
 
 - **Usability**
   - Context manager support (`with` statement) for resource management and clearer code.
-  - Consistent API: `isOk()`, `isNotOk()`, `hasEx()`, and properties for result, reason, exception, and call frame.
+  - Consistent API: `IsOk`, `IsNotOk`, `HasEx`, and properties for result, reason, exception, and call frame.
   - Custom string representations for debugging and logging.
 
 - **Code Path Coverage**
@@ -41,8 +41,8 @@ Please note that this code is just an initial design with the goal of building a
 
 ```python
 with CResultExample.do_something("123 Main St") as R:
-    if R.isNotOk():
-        if R.hasEx():
+    if R.IsNotOk: # Something is wrong
+        if R.HasEx: # An Exception was returned
             if R.code == CResultExample.ECode.TIMEOUT:
                 print(f"Timeout Error: {R.ppstr()}")
             else:
